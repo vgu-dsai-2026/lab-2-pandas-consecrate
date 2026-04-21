@@ -7,6 +7,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import nbformat
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -31,6 +33,10 @@ def parse_args() -> argparse.Namespace:
 
 def export_notebook(notebook_path: Path, output_path: Path) -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        normalized_notebook_path = temp_path / notebook_path.name
+        normalize_notebook(notebook_path, normalized_notebook_path)
+
         subprocess.run(
             [
                 sys.executable,
@@ -38,7 +44,7 @@ def export_notebook(notebook_path: Path, output_path: Path) -> None:
                 "nbconvert",
                 "--to",
                 "python",
-                str(notebook_path),
+                str(normalized_notebook_path),
                 "--output",
                 output_path.stem,
                 "--output-dir",
@@ -47,6 +53,17 @@ def export_notebook(notebook_path: Path, output_path: Path) -> None:
             check=True,
             cwd=temp_dir,
         )
+
+
+def normalize_notebook(notebook_path: Path, output_path: Path) -> None:
+    notebook = nbformat.read(notebook_path, as_version=4)
+
+    for cell in notebook.cells:
+        for output in cell.get("outputs", []):
+            if output.get("output_type") == "execute_result" and "execution_count" not in output:
+                output["execution_count"] = None
+
+    nbformat.write(notebook, output_path)
 
 
 def is_literal_assignment(node: ast.Assign | ast.AnnAssign) -> bool:
