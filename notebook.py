@@ -78,5 +78,5 @@ def build_split_characteristics_table(frame: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 def sample_balanced_by_split_and_label(frame: pd.DataFrame, n_per_group: int, seed: int) -> pd.DataFrame:
-    return frame.groupby(['split', 'label'], group_keys=False).apply(lambda x: x.sample(min(n_per_group, len(x)), random_state=seed)).reset_index(drop=True)
+    return frame.groupby(['split', 'label'], group_keys=False).sample(n=n_per_group, random_state=seed).reset_index(drop=True)
 sample_size_per_group = 5
